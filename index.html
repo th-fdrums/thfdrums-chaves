@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Chave Th-FDrums Player</title>
+<style>
+  :root { --bg:#111; --panel:#1e1e1e; --text:#f1f1f1; --muted:#a8a8a8; --accent:#ff7a00; --good:#37d67a; --bad:#ff5a5a; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f4f4f4; --panel:#fff; --text:#1a1a1a; --muted:#666; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; padding:16px; }
+  main { width:100%; max-width:420px; background:var(--panel); border-radius:16px; padding:24px; box-shadow:0 4px 24px rgba(0,0,0,.25); }
+  h1 { font-size:20px; margin:0 0 6px; }
+  p { color:var(--muted); font-size:14px; line-height:1.45; margin:0 0 16px; }
+  label { display:block; font-size:13px; margin-bottom:6px; }
+  input { width:100%; padding:12px; border-radius:10px; border:1px solid #555; background:transparent; color:var(--text); font-size:16px; }
+  button { width:100%; margin-top:14px; padding:13px; border:0; border-radius:10px; background:var(--accent); color:#111;
+           font-size:16px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.55; cursor:default; }
+  #msg { margin-top:16px; font-size:14px; line-height:1.45; min-height:20px; }
+  #msg.ok { color:var(--good); } #msg.err { color:var(--bad); }
+  small { display:block; margin-top:18px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chave promocional</h1>
+  <p>Digite o e-mail cadastrado e toque em <b>Gerar chave</b>. A chave é enviada para o seu e-mail — cada e-mail recebe uma única chave, válida por cerca de 1 ano — resgate assim que receber.</p>
+  <form id="f" novalidate>
+    <label for="email">Seu e-mail</label>
+    <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="voce@gmail.com" required>
+    <button id="btn" type="submit">Gerar chave</button>
+  </form>
+  <div id="msg" role="status" aria-live="polite"></div>
+  <small>Th-FDrums Player · Dúvidas? Grupo de suporte no Telegram (menu do app &gt; Comunidade e suporte).</small>
+</main>
+<script>
+  // Cole aqui a URL do Apps Script publicado (termina em /exec) — ver INSTRUCOES.md
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwHUSdepZXmpKKYHpu64pRNgOYGjFg-PePRmX0afptSa-vEawzdZvsNb3aD6HG4Q7ek1w/exec';
+
+  const form = document.getElementById('f');
+  const emailEl = document.getElementById('email');
+  const btn = document.getElementById('btn');
+  const msg = document.getElementById('msg');
+
+  function show(text, ok) { msg.textContent = text; msg.className = ok ? 'ok' : 'err'; }
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = emailEl.value.trim();
+    if (!email) { show('Digite o seu e-mail.', false); return; }
+    if (ENDPOINT.indexOf('http') !== 0) { show('Página ainda não configurada.', false); return; }
+    btn.disabled = true; show('Verificando…', true); msg.className = '';
+    try {
+      // text/plain evita o pré-voo (CORS) do navegador; o Apps Script lê o corpo normalmente
+      const res = await fetch(ENDPOINT, { method: 'POST', body: JSON.stringify({ email }) });
+      const data = await res.json();
+      show(data.message || 'Não foi possível concluir.', !!data.ok);
+      if (data.ok) { emailEl.value = ''; return; }
+    } catch (e) {
+      show('Sem conexão com o serviço. Tente de novo em instantes.', false);
+    }
+    btn.disabled = false;
+  });
+</script>
+</body>
+</html>
